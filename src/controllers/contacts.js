@@ -1,54 +1,171 @@
-import * as contactsService from '../services/contacts.js';
-import { ctrlWrapper } from '../utils/ctrlWrapper.js';
+import { Contact } from '../models/contacts.js';
+import { NotFound } from "../utils/errors.js";
 
-const getContacts = async (req, res, next) => {
-  const contacts = await contactsService.getAllContacts();
-  res.json({
-    status: 200,
-    message: "Successfully retrieved contacts",
-    data: contacts
-  });
+export const getAll = async (req, res, next) => {
+  try {
+    const {
+      page = 1,
+      perPage = 10,
+      sortBy = "name",
+      sortOrder = "asc",
+      type,
+      isFavourite,
+    } = req.query;
+    const skip = (page - 1) * perPage;
+
+    const filter = { };
+    
+    if (type) {
+      filter.contactType = type;
+    }
+    
+    if (isFavourite !== undefined) {
+      filter.isFavourite = isFavourite === "true";
+    }
+
+    const sortOptions = { [sortBy]: sortOrder === "asc" ? 1 : -1 };
+    
+    const totalItems = await Contact.countDocuments(filter);
+    const totalPages = Math.ceil(totalItems / perPage);
+    const hasPreviousPage = page > 1;
+    const hasNextPage = page < totalPages;
+
+    const contacts = await Contact.find(filter)
+      .sort(sortOptions)
+      .skip(skip)
+      .limit(perPage);
+
+    res.json({
+      status: 200,
+      message: "Successfully found contacts!",
+      data: {
+        data: contacts,
+        page: Number(page),
+        perPage: Number(perPage),
+        totalItems,
+        totalPages,
+        hasPreviousPage,
+        hasNextPage,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
 };
 
-const getContact = async (req, res, next) => {
-  const contact = await contactsService.getContactById(req.params.contactId);
-  res.json({
-    status: 200,
-    message: "Successfully retrieved contact",
-    data: contact
-  });
+export const getById = async (req, res, next) => {
+  try {
+    const { contactId } = req.params;
+    const { _id: owner } = req.user;
+    const contact = await Contact.findOne({ _id: contactId, owner });
+    
+    if (!contact) {
+      throw new NotFound("Contact not found");
+    }
+    
+    res.json({
+      status: 200,
+      message: "Successfully found contact!",
+      data: contact,
+    });
+  } catch (error) {
+    next(error);
+  }
 };
 
-const createContact = async (req, res, next) => {
-  const newContact = await contactsService.createContact(req.body);
-  res.status(201).json({
-    status: 201,
-    message: "Successfully created a contact!",
-    data: newContact
-  });
+export const add = async (req, res, next) => {
+  try {
+    const { _id: owner } = req.user;
+    const newContact = await Contact.create({ ...req.body, owner });
+    
+    res.status(201).json({
+      status: 201,
+      message: "Successfully created contact!",
+      data: newContact,
+    });
+  } catch (error) {
+    next(error);
+  }
 };
 
-const updateContact = async (req, res, next) => {
-  const updatedContact = await contactsService.updateContact(
-    req.params.contactId,
-    req.body
-  );
-  res.json({
-    status: 200,
-    message: "Successfully patched a contact!",
-    data: updatedContact
-  });
+export const updateById = async (req, res, next) => {
+  try {
+    const { contactId } = req.params;
+    const { _id: owner } = req.user;
+    const updatedContact = await Contact.findOneAndUpdate(
+      { _id: contactId, owner },
+      req.body,
+      { new: true }
+    );
+    
+    if (!updatedContact) {
+      throw new NotFound("Contact not found");
+    }
+    
+    res.json({
+      status: 200,
+      message: "Successfully updated contact!",
+      data: updatedContact,
+    });
+  } catch (error) {
+    next(error);
+  }
 };
 
-const deleteContact = async (req, res, next) => {
-  await contactsService.deleteContact(req.params.contactId);
-  res.status(204).end();
+export const updateFavourite = async (req, res, next) => {
+  try {
+    const { contactId } = req.params;
+    const { _id: owner } = req.user;
+    const updatedContact = await Contact.findOneAndUpdate(
+      { _id: contactId, owner },
+      req.body,
+      { new: true }
+    );
+    
+    if (!updatedContact) {
+      throw new NotFound("Contact not found");
+    }
+    
+    res.json({
+      status: 200,
+      message: "Successfully updated favourite status!",
+      data: updatedContact,
+    });
+  } catch (error) {
+    next(error);
+  }
 };
 
-export default {
-  getContacts: ctrlWrapper(getContacts),
-  getContact: ctrlWrapper(getContact),
-  createContact: ctrlWrapper(createContact),
-  updateContact: ctrlWrapper(updateContact),
-  deleteContact: ctrlWrapper(deleteContact)
+export const deleteById = async (req, res, next) => {
+  try {
+    const { contactId } = req.params;
+    const { _id: owner } = req.user;
+    const deletedContact = await Contact.findOneAndDelete({ _id: contactId, owner });
+    
+    if (!deletedContact) {
+      throw new NotFound("Contact not found");
+    }
+    
+    res.json({
+      status: 200,
+      message: "Successfully deleted contact!",
+      data: deletedContact,
+    });
+  } catch (error) {
+    next(error);
+  }
 };
+
+// Alternatif olarak tüm controller'ları bir nesne içinde export etmek isterseniz:
+
+const contactsController = {
+  getAll,
+  getById,
+  add,
+  updateById,
+  updateFavourite,
+  deleteById
+};
+
+export default contactsController;
+

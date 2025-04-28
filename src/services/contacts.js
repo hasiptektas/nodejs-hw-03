@@ -1,46 +1,86 @@
-import createError from 'http-errors';
-import { ContactsCollection } from '../models/contacts.js';
+import Contact from "../models/contacts";
+import NotFound  from "../utils/errors";
 
-export const getAllContacts = async () => {
-  return await ContactsCollection.find().sort({ createdAt: -1 });
+const listContacts = async (owner, query) => {
+  const {
+    page = 1,
+    perPage = 10,
+    sortBy = "name",
+    sortOrder = "asc",
+    type,
+    isFavourite,
+  } = query;
+
+  const skip = (page - 1) * perPage;
+  const filter = { owner };
+  
+  if (type) {
+    filter.contactType = type;
+  }
+  
+  if (isFavourite !== undefined) {
+    filter.isFavourite = isFavourite === "true";
+  }
+
+  const sortOptions = { [sortBy]: sortOrder === "asc" ? 1 : -1 };
+  
+  const totalItems = await Contact.countDocuments(filter);
+  const totalPages = Math.ceil(totalItems / perPage);
+  const hasPreviousPage = page > 1;
+  const hasNextPage = page < totalPages;
+
+  const contacts = await Contact.find(filter)
+    .sort(sortOptions)
+    .skip(skip)
+    .limit(perPage);
+
+  return {
+    data: contacts,
+    page: Number(page),
+    perPage: Number(perPage),
+    totalItems,
+    totalPages,
+    hasPreviousPage,
+    hasNextPage,
+  };
 };
 
-export const getContactById = async (id) => {
-  const contact = await ContactsCollection.findById(id);
+const getContactById = async (contactId, owner) => {
+  const contact = await Contact.findOne({ _id: contactId, owner });
   if (!contact) {
-    throw createError(404, 'Contact not found');
+    throw new NotFound("Contact not found");
   }
   return contact;
 };
 
-export const createContact = async (contactData) => {
-  const { name, phoneNumber, contactType } = contactData;
-  
-  if (!name || !phoneNumber || !contactType) {
-    throw createError(400, 'Missing required fields');
-  }
-
-  const newContact = new ContactsCollection(contactData);
-  return await newContact.save();
+const addContact = async (body, owner) => {
+  return await Contact.create({ ...body, owner });
 };
 
-export const updateContact = async (id, updateData) => {
-  const updatedContact = await ContactsCollection.findByIdAndUpdate(
-    id,
-    updateData,
-    { new: true, runValidators: true }
+const updateContact = async (contactId, body, owner) => {
+  const updatedContact = await Contact.findOneAndUpdate(
+    { _id: contactId, owner },
+    body,
+    { new: true }
   );
-  
   if (!updatedContact) {
-    throw createError(404, 'Contact not found');
+    throw new NotFound("Contact not found");
   }
-  
   return updatedContact;
 };
 
-export const deleteContact = async (id) => {
-  const deletedContact = await ContactsCollection.findByIdAndDelete(id);
+const removeContact = async (contactId, owner) => {
+  const deletedContact = await Contact.findOneAndDelete({ _id: contactId, owner });
   if (!deletedContact) {
-    throw createError(404, 'Contact not found');
+    throw new NotFound("Contact not found");
   }
+  return deletedContact;
+};
+
+module.exports = {
+  listContacts,
+  getContactById,
+  addContact,
+  updateContact,
+  removeContact,
 };
