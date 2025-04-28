@@ -2,12 +2,17 @@ import express from 'express';
 import contactsRouter from './routers/contacts.js';
 import { errorHandler } from './middlewares/errorHandler.js';
 import { notFoundHandler } from './middlewares/notFoundHandler.js';
+import cookieParser from 'cookie-parser';
+import { authRouter } from './routers/auth.js';
 
 export const startServer = () => {
   const app = express();
 
   // Middlewares
   app.use(express.json());
+
+  app.use(cookieParser());
+  app.use('/auth', authRouter);
 
   // Routes
   app.use('/contacts', contactsRouter);

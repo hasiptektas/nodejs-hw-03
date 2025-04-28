@@ -5,8 +5,11 @@ import isValidId from "../middlewares/isValidId.js";
 // Değiştirilecek kısım:
 import { contactValidationSchemas as schemas } from "../models/contacts.js";
 import ctrlWrapper from "../utils/ctrlWrapper.js";
+import { authenticate } from "../middlewares/authenticate.js";
 
 const router = express.Router();
+
+router.use(authenticate);
 
 router.get("/", ctrlWrapper(contactsController.getAll));
 
