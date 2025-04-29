@@ -17,21 +17,21 @@ router.get("/:contactId", isValidId, ctrlWrapper(contactsController.getById));
 
 router.post(
   "/",
-  validateBody(schemas.addSchema),
+  validateBody(schemas.add),
   ctrlWrapper(contactsController.add)
 );
 
 router.patch(
   "/:contactId/favourite",
   isValidId,
-  validateBody(schemas.updateFavouriteSchema),
+  validateBody(schemas.updateFavourite),
   ctrlWrapper(contactsController.updateFavourite)
 );
 
 router.patch(
   "/:contactId",
   isValidId,
-  validateBody(schemas.updateSchema),
+  validateBody(schemas.update),
   ctrlWrapper(contactsController.updateById)
 );
 

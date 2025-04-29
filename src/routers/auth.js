@@ -2,6 +2,8 @@ import express from 'express';
 import { authService } from '../services/auth.js';
 import  validateBody  from '../middlewares/validateBody.js';
 import { registerSchema, loginSchema } from '../schemas/auth.js';
+import { HttpError } from '../utils/errors.js';
+
 
 const router = express.Router();
 
@@ -54,6 +56,34 @@ router.post('/logout', async (req, res, next) => {
 
     // 204 No Content
     res.status(204).end();
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/refresh', async (req, res, next) => {
+  try {
+    const { refreshToken } = req.cookies;
+    
+    if (!refreshToken) {
+      throw new HttpError(401, 'Refresh token not provided');
+    }
+
+    const { accessToken, refreshToken: newRefreshToken, user } = await authService.refresh(refreshToken);
+    
+    // Yeni refresh token'ı cookie'ye set et
+    res.cookie('refreshToken', newRefreshToken, {
+      httpOnly: true,
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 gün
+      sameSite: 'strict',
+      secure: process.env.NODE_ENV === 'production'
+    });
+
+    res.json({
+      status: 200,
+      message: 'Successfully refreshed a session!',
+      data: { accessToken, user },
+    });
   } catch (error) {
     next(error);
   }

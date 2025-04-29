@@ -73,8 +73,56 @@ const logout = async (refreshToken) => {
   }
 };
 
+const refresh = async (refreshToken) => {
+  // 1. Refresh token'ı doğrula
+  // let decoded;
+  // try {
+  //   decoded = jwt.verify(refreshToken, process.env.REFRESH_SECRET);
+  // } catch (error) {
+  //   throw HttpError(401, 'Invalid refresh token');
+  // }
+
+  // 2. Veritabanında oturumu kontrol et
+  const session = await Session.findOne({ 
+    refreshToken,
+    refreshTokenValidUntil: { $gt: new Date() }
+  }).populate('userId');
+
+  if (!session) {
+    throw HttpError(401, 'Session expired or not found');
+  }
+
+  // 3. Eski oturumu sil
+  await Session.findByIdAndDelete(session._id);
+
+  // 4. Yeni token'lar oluştur
+  const newAccessToken = jwt.sign({ id: session.userId._id }, process.env.JWT_SECRET, { expiresIn: '15m' });
+  const newRefreshToken = jwt.sign({ id: session.userId._id }, process.env.REFRESH_SECRET, { expiresIn: '30d' });
+
+  // 5. Yeni oturum oluştur
+  await Session.create({
+    userId: session.userId._id,
+    accessToken: newAccessToken,
+    refreshToken: newRefreshToken,
+    accessTokenValidUntil: new Date(Date.now() + 15 * 60 * 1000), // 15 dakika
+    refreshTokenValidUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 gün
+  });
+
+  return {
+    accessToken: newAccessToken,
+    refreshToken: newRefreshToken,
+    user: {
+      _id: session.userId._id,
+      name: session.userId.name,
+      email: session.userId.email,
+    }
+  };
+};
+
+// authService export'una refresh'i eklemeyi unutmayın
 export const authService = {
   register,
   login,
   logout,
+  refresh
 };
