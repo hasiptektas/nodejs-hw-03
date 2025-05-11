@@ -5,6 +5,8 @@ import { notFoundHandler } from './middlewares/notFoundHandler.js';
 import cookieParser from 'cookie-parser';
 import { authRouter } from './routers/auth.js';
 
+import { UPLOAD_DIR } from './constants/index.js';
+
 export const startServer = () => {
   const app = express();
 
@@ -16,6 +18,8 @@ export const startServer = () => {
 
   // Routes
   app.use('/contacts', contactsRouter);
+
+  app.use('/uploads', express.static(UPLOAD_DIR));
 
   // 404 Handler
   app.use(notFoundHandler);

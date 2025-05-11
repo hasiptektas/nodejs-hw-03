@@ -6,8 +6,10 @@ import isValidId from "../middlewares/isValidId.js";
 import { contactValidationSchemas as schemas } from "../models/contacts.js";
 import ctrlWrapper from "../utils/ctrlWrapper.js";
 import { authenticate } from "../middlewares/authenticate.js";
+import { upload } from "../middlewares/multer.js";
 
 const router = express.Router();
+const jsonParser = express.json();
 
 router.use(authenticate);
 
@@ -17,6 +19,8 @@ router.get("/:contactId", isValidId, ctrlWrapper(contactsController.getById));
 
 router.post(
   "/",
+  jsonParser,
+  upload.single('photo'),
   validateBody(schemas.add),
   ctrlWrapper(contactsController.add)
 );
@@ -30,6 +34,8 @@ router.patch(
 
 router.patch(
   "/:contactId",
+  jsonParser,
+  upload.single('photo'),
   isValidId,
   validateBody(schemas.update),
   ctrlWrapper(contactsController.updateById)

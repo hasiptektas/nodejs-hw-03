@@ -1,5 +1,7 @@
 import { Contact } from '../models/contacts.js';
 import { NotFound } from "../utils/errors.js";
+import { saveFileToCloudinary } from '../utils/saveFileToCloudinary.js';
+import { saveFileToUploadDir } from '../utils/saveFileToUploadDir.js';
 
 const contactsController = {
   getAll: async (req, res, next) => {
@@ -14,7 +16,7 @@ const contactsController = {
       } = req.query;
       
       const skip = (page - 1) * perPage;
-      const filter = { owner: req.user._id }; // Sadece oturum açan kullanıcının contact'ları
+      const filter = { owner: req.user._id };
       
       if (type) filter.contactType = type;
       if (isFavourite !== undefined) {
@@ -68,9 +70,26 @@ const contactsController = {
 
   add: async (req, res, next) => {
     try {
+      const photo = req.file;
+      let photoUrl;
+
+      if (photo) {
+        try {
+          photoUrl = await saveFileToCloudinary(photo);
+        } catch (error) {
+          console.log(error);
+          throw new Error('Failed to save photo, please try again later.');
+        }
+      }
+
       const newContact = await Contact.create({
-        ...req.body,
-        owner: req.user._id
+        name: req.body.name,
+        phoneNumber: req.body.phoneNumber,
+        email: req.body.email,
+        isFavourite: req.body.isFavourite,
+        contactType: req.body.contactType,
+        owner: req.user._id,
+        photo: photoUrl
       });
       
       res.status(201).json({
@@ -85,12 +104,25 @@ const contactsController = {
 
   updateById: async (req, res, next) => {
     try {
+      const photo = req.file;
+      let updateData = { ...req.body };
+
+      if (photo) {
+        try {
+          const photoUrl = await saveFileToCloudinary(photo);
+          updateData.photo = photoUrl;
+        } catch (error) {
+          console.log(error);
+          throw new Error('Failed to save photo, please try again later.');
+        }
+      }
+
       const updatedContact = await Contact.findOneAndUpdate(
         { 
           _id: req.params.contactId,
           owner: req.user._id 
         },
-        req.body,
+        updateData,
         { new: true }
       );
       
@@ -146,7 +178,46 @@ const contactsController = {
     } catch (error) {
       next(error);
     }
+  },
+
+  patchContact: async (req, res, next) => {
+    try {
+      const { contactId } = req.params;
+      const photo = req.file;
+      let photoUrl;
+
+      if (photo) {
+        if (process.env.ENABLE_CLOUDINARY === 'true') {
+          photoUrl = await saveFileToCloudinary(photo);
+        } else {
+          photoUrl = await saveFileToUploadDir(photo);
+        }
+      }
+
+      const updateData = {
+        ...req.body,
+        ...(photoUrl && { photo: photoUrl }) // photoUrl varsa ekle
+      };
+
+      const updatedContact = await Contact.findOneAndUpdate(
+        { 
+          _id: contactId,
+          owner: req.user._id 
+        },
+        updateData,
+        { new: true }
+      );
+
+      if (!updatedContact) throw new NotFound("Contact not found");
+
+      res.json({
+        status: 200,
+        message: "Successfully patched contact!",
+        data: updatedContact
+      });
+    } catch (error) {
+      next(error);
+    }
   }
 };
-
 export default contactsController;

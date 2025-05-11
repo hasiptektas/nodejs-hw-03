@@ -14,20 +14,14 @@ export const authenticate = async (req, res, next) => {
 
     const token = authHeader.split(' ')[1];
 
-    console.log('Token:', token); // Token'ı konsola yazdır
-
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    console.log('Decoded:', decoded); // Decoded token'ı konsola yazdır
-    console.log('.env:', process.env.JWT_SECRET);
     
     const session = await Session.findOne({ 
       userId: decoded.id,
       accessToken: token,
       accessTokenValidUntil: { $gt: new Date() }
     }).populate('userId');
-
-    console.log('Session:', session); // Session'ı konsola yazdır
 
     if (!session) {
       throw new HttpError(401, 'Access token expired');

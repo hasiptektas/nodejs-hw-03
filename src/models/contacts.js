@@ -9,7 +9,7 @@ const contactSchema = new mongoose.Schema(
       minlength: 3,
       maxlength: 20,
     },
-    phone: {
+    phoneNumber: {
       type: String,
       required: [true, "Phone is required"],
       minlength: 3,
@@ -37,6 +37,9 @@ const contactSchema = new mongoose.Schema(
       ref: "user",
       required: true
     },
+    photo: { 
+      type: String 
+    },
   },
   { 
     versionKey: false, 
@@ -56,7 +59,7 @@ const contactSchema = new mongoose.Schema(
 export const contactValidationSchemas = {
   add: Joi.object({
     name: Joi.string().min(3).max(20).required(),
-    phone: Joi.string().min(3).max(20).required(),
+    phoneNumber: Joi.string().min(3).max(20).required(),
     email: Joi.string().min(3).max(20).email().required(),
     contactType: Joi.string().valid("work", "home", "personal"),
     isFavourite: Joi.boolean(),
@@ -64,7 +67,7 @@ export const contactValidationSchemas = {
 
   update: Joi.object({
     name: Joi.string().min(3).max(20),
-    phone: Joi.string().min(3).max(20),
+    phoneNumber: Joi.string().min(3).max(20),
     email: Joi.string().min(3).max(20).email(),
     contactType: Joi.string().valid("work", "home", "personal"),
   }).min(1),

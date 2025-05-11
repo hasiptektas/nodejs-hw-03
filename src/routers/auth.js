@@ -1,9 +1,11 @@
 import express from 'express';
 import { authService } from '../services/auth.js';
 import  validateBody  from '../middlewares/validateBody.js';
-import { registerSchema, loginSchema } from '../schemas/auth.js';
+import ctrlWrapper from "../utils/ctrlWrapper.js";
+import { registerSchema, loginSchema, requestResetEmailSchema, resetPasswordSchema } from '../schemas/auth.js';
 import { HttpError } from '../utils/errors.js';
-
+import { requestResetEmailController } from '../controllers/auth.js';
+import { resetPasswordController } from '../controllers/auth.js';
 
 const router = express.Router();
 
@@ -88,5 +90,22 @@ router.post('/refresh', async (req, res, next) => {
     next(error);
   }
 });
+
+
+// Email Reset
+router.post("/send-reset-email", 
+  validateBody(requestResetEmailSchema),
+  ctrlWrapper(requestResetEmailController)
+);
+
+// Password Reset
+router.post(
+  '/reset-pwd',
+  validateBody(resetPasswordSchema),
+  ctrlWrapper(resetPasswordController),
+);
+
+
+
 
 export const authRouter = router;
