@@ -1,0 +1,45 @@
+tags:
+  - Contacts
+summary: Bir kişiyi günceller
+operationId: updateContact
+description: Verilen ID'ye sahip kişinin bilgilerini günceller
+security:
+  - bearerAuth: []
+parameters:
+  - name: id
+    in: path
+    required: true
+    schema:
+      type: string
+    description: Kişi ID'si
+requestBody:
+  required: true
+  content:
+    application/json:
+      schema:
+        $ref: '#/components/schemas/ContactUpdate'
+responses:
+  '200':
+    description: Kişi başarıyla güncellendi
+    content:
+      application/json:
+        schema:
+          $ref: '#/components/schemas/Contact'
+  '400':
+    description: Geçersiz istek
+    content:
+      application/json:
+        schema:
+          $ref: '#/components/schemas/Error'
+  '401':
+    description: Yetkisiz erişim
+    content:
+      application/json:
+        schema:
+          $ref: '#/components/schemas/Error'
+  '404':
+    description: Kişi bulunamadı
+    content:
+      application/json:
+        schema:
+          $ref: '#/components/schemas/Error' 

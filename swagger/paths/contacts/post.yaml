@@ -1,0 +1,32 @@
+tags:
+  - Contacts
+summary: Yeni bir kişi oluşturur
+operationId: createContact
+description: Sisteme yeni bir kişi ekler
+security:
+  - bearerAuth: []
+requestBody:
+  required: true
+  content:
+    application/json:
+      schema:
+        $ref: '#/components/schemas/ContactCreate'
+responses:
+  '201':
+    description: Kişi başarıyla oluşturuldu
+    content:
+      application/json:
+        schema:
+          $ref: '#/components/schemas/Contact'
+  '400':
+    description: Geçersiz istek
+    content:
+      application/json:
+        schema:
+          $ref: '#/components/schemas/Error'
+  '401':
+    description: Yetkisiz erişim
+    content:
+      application/json:
+        schema:
+          $ref: '#/components/schemas/Error' 

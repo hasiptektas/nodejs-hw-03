@@ -1,0 +1,52 @@
+tags:
+  - Contacts
+summary: Tüm kişileri listeler
+operationId: getContacts
+description: Sistemdeki tüm kişileri listeler, filtreleme ve sayfalama seçenekleri mevcuttur
+security:
+  - bearerAuth: []
+parameters:
+  - name: page
+    in: query
+    required: false
+    schema:
+      type: integer
+      default: 1
+    description: Sayfa numarası
+  - name: limit
+    in: query
+    required: false
+    schema:
+      type: integer
+      default: 10
+    description: Sayfa başına kayıt sayısı
+  - name: favorite
+    in: query
+    required: false
+    schema:
+      type: boolean
+    description: Sadece favori kişileri getir
+responses:
+  '200':
+    description: Başarılı
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            contacts:
+              type: array
+              items:
+                $ref: '#/components/schemas/Contact'
+            total:
+              type: integer
+            page:
+              type: integer
+            limit:
+              type: integer
+  '401':
+    description: Yetkisiz erişim
+    content:
+      application/json:
+        schema:
+          $ref: '#/components/schemas/Error' 

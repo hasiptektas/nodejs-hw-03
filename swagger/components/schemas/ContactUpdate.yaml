@@ -1,0 +1,15 @@
+type: object
+properties:
+  name:
+    type: string
+    description: Kişi adı
+  email:
+    type: string
+    format: email
+    description: E-posta adresi
+  phone:
+    type: string
+    description: Telefon numarası
+  favorite:
+    type: boolean
+    description: Favori durumu 

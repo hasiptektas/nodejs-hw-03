@@ -1,0 +1,11 @@
+type: object
+properties:
+  message:
+    type: string
+    description: Hata mesajı
+  status:
+    type: integer
+    description: HTTP durum kodu
+required:
+  - message
+  - status 
